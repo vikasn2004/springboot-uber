@@ -20,11 +20,11 @@ import java.time.LocalDateTime;
 public class User {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
-    private int id;
+     Long id;
 
     @NotBlank
     @Column(nullable = false, unique = true)
-     String username;
+    String username;
 
     @NotBlank
     @Column(nullable = false)

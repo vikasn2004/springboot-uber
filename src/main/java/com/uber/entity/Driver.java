@@ -14,14 +14,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name="driver")
+@Table(name="drivers")
 @Getter
 @Setter
 @FieldDefaults(level= AccessLevel.PRIVATE)
 public class Driver {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
-    @Column(name="id")
     Long id;
 
     @NotBlank
@@ -51,16 +50,16 @@ public class Driver {
     String vehicleName;
 
     @NotBlank
-    @Column(nullable = false)
+    @Column(nullable = false,unique = true)
     String vehicleNumber;
 
     @NotBlank
     @Column(nullable = false,unique = true)
-    String DL_NUMBER;
+    String dlNumber;
 
     @NotNull
     @Column(nullable = false)
-    LocalDate DL_EXPIRY_DATE;
+    LocalDate dlExpiryDate;
 
     LocalDateTime createdAt;
 
