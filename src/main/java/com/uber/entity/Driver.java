@@ -12,6 +12,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name="drivers")
@@ -67,4 +68,7 @@ public class Driver {
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
+
+    @OneToMany(mappedBy = "driver")
+    List<Ride>  rides;
 }

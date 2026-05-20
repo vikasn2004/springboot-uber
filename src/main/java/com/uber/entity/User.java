@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 
 @Entity
@@ -50,4 +51,6 @@ public class User {
         this.createdAt = LocalDateTime.now();
     }
 
+    @OneToMany(mappedBy = "rider")
+    List<Ride> allRides;
 }
