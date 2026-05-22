@@ -20,9 +20,11 @@ public class Ride {
     Long id;
 
     @ManyToOne()
+    @JoinColumn(name="driver_id")
     Driver driver;
 
     @ManyToOne()
+    @JoinColumn(name="user_id")
     User rider;
 
 
@@ -32,29 +34,29 @@ public class Ride {
     @Column(nullable = false)
     String dropOffLocation;
 
-    @Column(nullable = false)
-    LocalDateTime pickupTime;
+
     @Column(nullable = false)
     String latitudePickUpLocation;
     @Column(nullable = false)
     String longitudePickUpLocation;
+    @Column(nullable = false)
+    LocalDateTime pickupTime;
 
 
 
     @Column(nullable = false)
-    String latitudeDropOfLocation;
+    String latitudeDropOffLocation;
     @Column(nullable = false)
-    String longitudePDropOfLocation;
+    String longitudePDropOffLocation;
+    @Column(nullable = false)
+    LocalDateTime dropOfTime;
 
 
     @Enumerated(EnumType.STRING)
     Status status= Status.REQUESTED;
 
-    @Column(nullable = false)
     Double distance;
-    @Column(nullable = false)
     Double duration;
-    @Column(nullable = false)
     Double fare;
 
     LocalDateTime createdTime;
@@ -63,7 +65,7 @@ public class Ride {
     public void prePersist() {
         createdTime = LocalDateTime.now();
     }
+  @OneToOne(mappedBy = "ride")
+    RideRating rideRating;
 
-    @Column(nullable = false)
-    LocalDateTime dropOfTime;
 }

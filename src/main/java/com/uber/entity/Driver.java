@@ -62,6 +62,8 @@ public class Driver {
     @Column(nullable = false)
     LocalDate dlExpiryDate;
 
+    boolean isAvailable=true;
+
     LocalDateTime createdAt;
 
     @PrePersist
@@ -71,4 +73,6 @@ public class Driver {
 
     @OneToMany(mappedBy = "driver")
     List<Ride>  rides;
+
+
 }
