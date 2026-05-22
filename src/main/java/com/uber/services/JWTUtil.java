@@ -1,5 +1,6 @@
 package com.uber.services;
 
+import com.uber.Roles;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -17,20 +18,21 @@ public class JWTUtil {
     @Value("${jwt.secretkey}")
     private String SecretKey;
 
-    private Key getkey(){
+    private Key getKey(){
       return Keys.hmacShaKeyFor(SecretKey.getBytes());
     }
-    public String generateToken(String email){
+    public String generateToken(String email, Roles role){
         return Jwts.builder()
                 .setSubject(email)
-                .signWith(getkey(), SignatureAlgorithm.HS256)
+                .claim("role",role.name())
+                .signWith(getKey(), SignatureAlgorithm.HS256)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 *60 * 60 *10))
                 .compact();
     }
     public String getEmailFromToken(String token){
         return Jwts.parserBuilder()
-                .setSigningKey(getkey())
+                .setSigningKey(getKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
@@ -38,18 +40,23 @@ public class JWTUtil {
     }
     public Date getExpirationDateFromToken(String token){
         return Jwts.parserBuilder()
-                .setSigningKey(getkey())
+                .setSigningKey(getKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
                 .getExpiration();
     }
-    public boolean TokenExpired(String token){
+    public String getRoleFromToken(String token){
+        return Jwts.parserBuilder()
+                .setSigningKey(getKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("role").toString();
+    }
+    public boolean isTokenExpired(String token){
         return getExpirationDateFromToken(token).before(new Date());
     }
-    public boolean validateToken(String token,UserDetails userDetails){
-        String email = getEmailFromToken(token);
-        return email.equals(userDetails.getUsername())  && !TokenExpired(token);
-    }
+
 
 }

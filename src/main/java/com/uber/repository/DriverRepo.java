@@ -1,9 +1,14 @@
 package com.uber.repository;
 
 import com.uber.entity.Driver;
+import com.uber.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface DriverRepo extends JpaRepository<Driver,Long> {
+    Optional<Driver> findByEmail(String email);
+
 }

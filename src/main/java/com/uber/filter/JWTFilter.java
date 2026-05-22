@@ -1,4 +1,4 @@
-package com.uber.Filter;
+package com.uber.filter;
 
 import com.uber.services.JWTUtil;
 import com.uber.services.LoadUserDetailsImple;
@@ -7,16 +7,15 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -34,10 +33,12 @@ public class JWTFilter extends OncePerRequestFilter {
         String token = header.substring(7);
         String email= jwtUtil.getEmailFromToken(token);
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = loadUserDetailsImple.loadUserByUsername(email);
-            if (jwtUtil.validateToken(token, userDetails)) {
+            if (jwtUtil.isTokenExpired(token)) {
+                String role = jwtUtil.getRoleFromToken(token);
+                List<GrantedAuthority> authorities =
+                        List.of(new SimpleGrantedAuthority("ROLE_" + role));
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken
-                        (userDetails, null, userDetails.getAuthorities());
+                        (email, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }

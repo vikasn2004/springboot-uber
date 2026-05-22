@@ -1,5 +1,6 @@
 package com.uber.entity;
 
+import com.uber.Roles;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.AccessLevel;
@@ -23,26 +24,16 @@ public class User {
     @GeneratedValue(strategy= GenerationType.IDENTITY)
      Long id;
 
-    @NotBlank
     @Column(nullable = false, unique = true)
-    String username;
+    String name;
 
-    @NotBlank
     @Column(nullable = false)
-    @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&]).{8,}$",
-            message = "Password must be 8+ chars, include uppercase, lowercase, number, and special character"
-    )
-     String password;
+    String password;
 
-    @NotBlank
     @Column(nullable = false, unique = true)
-    @Email(message = "invalid email!")
      String email;
 
-    @NotBlank
     @Column(nullable = false, unique = true)
-    @Pattern(regexp = "^([0-9]){10}$",message = "phone numeber must be 10 digit")
      String phoneNumber;
 
     LocalDateTime createdAt;
@@ -53,4 +44,7 @@ public class User {
 
     @OneToMany(mappedBy = "rider")
     List<Ride> allRides;
+
+    @Enumerated(EnumType.STRING)
+    Roles role=Roles.USER;
 }
