@@ -29,6 +29,7 @@ private final UserDetailsService userDetailsService;
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                         .requestMatchers("/auth/uber/**").permitAll()
+                        .requestMatchers("/uber/ride/**").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

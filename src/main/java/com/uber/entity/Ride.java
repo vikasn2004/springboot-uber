@@ -10,23 +10,23 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name="rides")
+@Table(name = "rides")
 @Getter
 @Setter
-@FieldDefaults(level= AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Ride {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    @ManyToOne()
-    @JoinColumn(name="driver_id")
+    @ManyToOne
+    @JoinColumn(name = "driver_id")
     Driver driver;
 
-    @ManyToOne()
-    @JoinColumn(name="user_id")
+    @ManyToOne
+    @JoinColumn(name = "user_id")
     User rider;
-
 
     @Column(nullable = false)
     String pickupLocation;
@@ -34,26 +34,24 @@ public class Ride {
     @Column(nullable = false)
     String dropOffLocation;
 
+    @Column(nullable = false)
+    Double pickupLatitude;
 
     @Column(nullable = false)
-    String latitudePickUpLocation;
-    @Column(nullable = false)
-    String longitudePickUpLocation;
-    @Column(nullable = false)
+    Double pickupLongitude;
+
     LocalDateTime pickupTime;
 
-
+    @Column(nullable = false)
+    Double dropOffLatitude;
 
     @Column(nullable = false)
-    String latitudeDropOffLocation;
-    @Column(nullable = false)
-    String longitudePDropOffLocation;
-    @Column(nullable = false)
-    LocalDateTime dropOfTime;
+    Double dropOffLongitude;
 
+    LocalDateTime dropOffTime;
 
     @Enumerated(EnumType.STRING)
-    Status status= Status.REQUESTED;
+    Status status = Status.REQUESTED;
 
     Double distance;
     Double duration;
@@ -65,7 +63,7 @@ public class Ride {
     public void prePersist() {
         createdTime = LocalDateTime.now();
     }
-  @OneToOne(mappedBy = "ride")
-    RideRating rideRating;
 
+    @OneToOne(mappedBy = "ride")
+    RideRating rideRating;
 }
