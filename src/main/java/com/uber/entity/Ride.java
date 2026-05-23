@@ -1,5 +1,7 @@
 package com.uber.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.uber.Status;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

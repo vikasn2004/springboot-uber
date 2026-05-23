@@ -1,9 +1,6 @@
 package com.uber.controller;
 
-import com.uber.DTO.AcceptRideResponseDTO;
-import com.uber.DTO.AllPendingRidesDTO;
-import com.uber.DTO.AllRidesDTO;
-import com.uber.DTO.EndRideDTO;
+import com.uber.DTO.*;
 import com.uber.services.DriverService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,11 +20,13 @@ public class DriverController {
     public ResponseEntity<List<AllPendingRidesDTO>> getAllRides() {
         return ResponseEntity.ok(driverService.getAllPendingRides());
     }
+
     @PreAuthorize("hasRole('DRIVER')")
     @PutMapping("/ride/accept/{rideId}")
     public ResponseEntity<AcceptRideResponseDTO> acceptRide(@PathVariable Long rideId) {
         return ResponseEntity.ok(driverService.rideAccept(rideId));
     }
+
     @PreAuthorize("hasRole('DRIVER')")
     @PutMapping("/ride/cancel/{rideId}")
     public ResponseEntity<String> cancelRide(@PathVariable Long rideId) {
@@ -39,14 +38,24 @@ public class DriverController {
     public ResponseEntity<String> startRide(@PathVariable Long rideId) {
         return ResponseEntity.ok(driverService.startedRide(rideId));
     }
+
     @PreAuthorize("hasRole('DRIVER')")
     @PutMapping("/ride/end/{rideId}")
     public ResponseEntity<EndRideDTO> endRide(@PathVariable Long rideId) {
         return ResponseEntity.ok(driverService.endRide(rideId));
     }
+
     @PreAuthorize("hasRole('DRIVER')")
     @GetMapping("/ride/history")
-public ResponseEntity<List<AllRidesDTO>>  getAllRidesHistory() {
-    return ResponseEntity.ok(driverService.getAllRides());
+    public ResponseEntity<List<AllRidesDTO>> getAllRidesHistory() {
+        return ResponseEntity.ok(driverService.getAllRides());
     }
-}
+    @PreAuthorize("hasRole('DRIVER')")
+    @GetMapping("/getEarnings/{days}")
+    public ResponseEntity<EarningsDTO> getEarnings(@PathVariable Long days) {
+        return ResponseEntity.ok(driverService.getEarnings(days));
+    }
+
+
+    }
+

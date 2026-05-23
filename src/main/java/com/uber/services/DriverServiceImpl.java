@@ -1,9 +1,6 @@
 package com.uber.services;
 
-import com.uber.DTO.AcceptRideResponseDTO;
-import com.uber.DTO.AllPendingRidesDTO;
-import com.uber.DTO.AllRidesDTO;
-import com.uber.DTO.EndRideDTO;
+import com.uber.DTO.*;
 import com.uber.Status;
 import com.uber.entity.Driver;
 import com.uber.entity.Ride;
@@ -86,6 +83,8 @@ public class DriverServiceImpl implements DriverService {
                 .toList();
     }
 
+
+
     @Override
     public String startedRide(Long rideId) {
         Ride ride = rideRepo.findById(rideId).orElseThrow(() -> new RuntimeException("Ride not found"));
@@ -117,6 +116,24 @@ public class DriverServiceImpl implements DriverService {
         return modelMapper.map(savedRide, EndRideDTO.class);
     }
 
+    @Override
+    public EarningsDTO getEarnings(Long days) {
+      String email = SecurityContextHolder.getContext().getAuthentication().getName();
+      Driver driver=driverRepo.findByEmail(email).orElseThrow(() -> new RuntimeException("Driver not found"));
+      LocalDateTime startDate = LocalDateTime.now().minusDays(days);
+      List<Ride> rides=rideRepo.findCompletedRidesAfter(driver.getId(), startDate,Status.COMPLETED);
+
+      double totalEarnings=rides.stream().mapToDouble(Ride::getFare).sum();
+        List<RideSummary> rideSummaries = rides.stream()
+                .map(ride -> modelMapper.map(ride, RideSummary.class))
+                .toList();
+      return new EarningsDTO(
+              days,
+              totalEarnings,
+              rides.size(),
+              rideSummaries
+      );
+    }
 
 }
 

@@ -6,8 +6,11 @@ import com.uber.entity.Driver;
 import com.uber.entity.Ride;
 import com.uber.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -16,5 +19,12 @@ public interface RideRepo extends JpaRepository<Ride, Long> {
     List<Ride> findByRider(User user);
     List<Ride> findByStatus(Status status);
     List<Ride> findByDriver(Driver driver);
+
+    @Query("SELECT r FROM Ride r WHERE r.driver.id = :driverId " +
+            "AND r.status = :status " +
+            "AND r.createdTime >= :startDate")
+    List<Ride> findCompletedRidesAfter(
+            @Param("driverId") Long driverId,
+            @Param("startDate") LocalDateTime startDate, @Param("status") Status status);
 
 }
