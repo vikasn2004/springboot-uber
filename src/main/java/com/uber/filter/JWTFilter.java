@@ -33,7 +33,7 @@ public class JWTFilter extends OncePerRequestFilter {
         String token = header.substring(7);
         String email= jwtUtil.getEmailFromToken(token);
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            if (jwtUtil.isTokenExpired(token)) {
+            if (!jwtUtil.isTokenExpired(token)) {
                 String role = jwtUtil.getRoleFromToken(token);
                 List<GrantedAuthority> authorities =
                         List.of(new SimpleGrantedAuthority("ROLE_" + role));

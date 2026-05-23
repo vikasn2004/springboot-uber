@@ -1,17 +1,24 @@
 package com.uber.services;
 
+import com.uber.DTO.AllRidesDTO;
 import com.uber.DTO.RideFareDTO;
 import com.uber.DTO.RideRequestDTO;
 import com.uber.DTO.RideRequestResponseDTO;
 import com.uber.Status;
 import com.uber.entity.Ride;
+import com.uber.entity.User;
 import com.uber.repository.RideRepo;
+import com.uber.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +26,7 @@ public class UserServiceImpl implements UserService {
 
     private final ModelMapper modelMapper;
     private final RideRepo rideRepo;
+    private final UserRepo userRepo;
 
     @Value("${earth.radius}")
     Double earthRadius;
@@ -26,6 +34,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public RideRequestResponseDTO rideRequest(RideRequestDTO rideRequest) {
         Ride ride = modelMapper.map(rideRequest, Ride.class);
+        String email= SecurityContextHolder.getContext().getAuthentication().getName();
+        User user=userRepo.findByEmail(email).orElseThrow(()->new RuntimeException("user not found"));
         double lat1Rad = Math.toRadians(ride.getPickupLatitude());
         double lat2Rad = Math.toRadians(ride.getDropOffLatitude());
         double deltaLat = Math.toRadians(ride.getDropOffLatitude() - ride.getPickupLatitude());
@@ -39,6 +49,7 @@ public class UserServiceImpl implements UserService {
         double distance = earthRadius * c;
         ride.setDistance(distance);
         ride.setFare(50 + distance * 10);
+        ride.setRider(user);
         ride.setStatus(Status.REQUESTED);
         Ride currRide = rideRepo.save(ride);
         RideRequestResponseDTO responseDTO = modelMapper.map(ride, RideRequestResponseDTO.class);
@@ -68,4 +79,23 @@ public class UserServiceImpl implements UserService {
         rideFareDTO.setTime(LocalDateTime.now());
         return rideFareDTO;
     }
+
+    @Override
+    public String cancelRide(Long rideId) {
+        Ride ride=rideRepo.findById(rideId).orElseThrow(()->new RuntimeException("ride not found"));
+        ride.setStatus(Status.CANCELLED);
+        rideRepo.save(ride);
+        return "ride cancelled";
+    }
+
+    @Override
+    public List<AllRidesDTO> getallRides(Long userId) {
+        User user=userRepo.findById(userId).orElseThrow(()->new RuntimeException("user not found"));
+        List<AllRidesDTO> allRidesDTOS = rideRepo.findByRider(user)
+                .stream()
+                .map(ride -> modelMapper.map(ride, AllRidesDTO.class))
+                .collect(Collectors.toList());
+        return allRidesDTOS;
+    }
+
 }
