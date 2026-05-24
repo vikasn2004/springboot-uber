@@ -4,7 +4,13 @@ import com.uber.DTO.*;
 import com.uber.Status;
 import com.uber.entity.Driver;
 import com.uber.entity.Ride;
+import com.uber.entity.RideRating;
+import com.uber.exceptions.DriverNotFoundException;
+import com.uber.exceptions.DriverUnavailableException;
+import com.uber.exceptions.RatingAlreadyExistsException;
+import com.uber.exceptions.RideUnavailableException;
 import com.uber.repository.DriverRepo;
+import com.uber.repository.RideRatingRepo;
 import com.uber.repository.RideRepo;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -22,6 +28,7 @@ public class DriverServiceImpl implements DriverService {
     private final RideRepo rideRepo;
     private final ModelMapper modelMapper;
     private final DriverRepo driverRepo;
+    private final RideRatingRepo rideRatingRepo;
 
     @Override
     public List<AllPendingRidesDTO> getAllPendingRides() {
@@ -37,11 +44,11 @@ public class DriverServiceImpl implements DriverService {
     public AcceptRideResponseDTO rideAccept(Long rideId) {
         Ride ride = rideRepo.findById(rideId).orElseThrow(() -> new RuntimeException("Ride not found"));
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        Driver driver = driverRepo.findByEmail(email).orElseThrow(() -> new RuntimeException("Driver not found"));
+        Driver driver = driverRepo.findByEmail(email).orElseThrow(() -> new DriverNotFoundException("Driver not found"));
         if(!driver.isAvailable())
-            throw new RuntimeException("Driver is not available");
+            throw new DriverUnavailableException("Driver you have already accpeted a ride");
         if (ride.getStatus() != Status.REQUESTED ) {
-            throw new RuntimeException("Ride not requested ");
+            throw new RideUnavailableException("Ride not requested or Ride was cancelled");
         }
         ride.setStatus(Status.ACCEPTED);
         ride.setDriver(driver);
@@ -59,9 +66,9 @@ public class DriverServiceImpl implements DriverService {
     }
     @Override
     public String cancelRide(Long rideId) {
-        Ride ride = rideRepo.findById(rideId).orElseThrow(() -> new RuntimeException("Ride not found"));
+        Ride ride = rideRepo.findById(rideId).orElseThrow(() -> new RideUnavailableException("Ride not found"));
         if(ride.getStatus() != Status.ACCEPTED) {
-            throw new RuntimeException("Ride not accepted");
+            throw new RideUnavailableException("Ride not accepted");
         }
         Driver driver=ride.getDriver();
         driver.setAvailable(true);
@@ -75,7 +82,7 @@ public class DriverServiceImpl implements DriverService {
     public List<AllRidesDTO> getAllRides() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Driver driver = driverRepo.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Driver not found"));
+                .orElseThrow(() -> new DriverNotFoundException("Driver not found"));
 
         return rideRepo.findByDriver(driver)
                 .stream()
@@ -83,13 +90,11 @@ public class DriverServiceImpl implements DriverService {
                 .toList();
     }
 
-
-
     @Override
     public String startedRide(Long rideId) {
-        Ride ride = rideRepo.findById(rideId).orElseThrow(() -> new RuntimeException("Ride not found"));
+        Ride ride = rideRepo.findById(rideId).orElseThrow(() -> new RideUnavailableException("Ride not found"));
         if (ride.getStatus() != Status.ACCEPTED) {
-            throw new RuntimeException("Ride not accepted");
+            throw new RideUnavailableException("Ride not accepted");
         }
         ride.setStatus(Status.ONGOING);
         ride.setPickupTime(LocalDateTime.now());
@@ -100,10 +105,10 @@ public class DriverServiceImpl implements DriverService {
     @Override
     public EndRideDTO endRide(Long rideId) {
         Ride ride = rideRepo.findById(rideId)
-                .orElseThrow(() -> new RuntimeException("Ride not found"));
+                .orElseThrow(() -> new RideUnavailableException("Ride not found"));
 
         if (ride.getStatus() != Status.ONGOING) {
-            throw new RuntimeException("Ride is not ongoing");
+            throw new RideUnavailableException("Ride is not ongoing");
         }
 
         ride.setDropOffTime(LocalDateTime.now());
@@ -119,7 +124,7 @@ public class DriverServiceImpl implements DriverService {
     @Override
     public EarningsDTO getEarnings(Long days) {
       String email = SecurityContextHolder.getContext().getAuthentication().getName();
-      Driver driver=driverRepo.findByEmail(email).orElseThrow(() -> new RuntimeException("Driver not found"));
+      Driver driver=driverRepo.findByEmail(email).orElseThrow(() -> new DriverNotFoundException("Driver not found"));
       LocalDateTime startDate = LocalDateTime.now().minusDays(days);
       List<Ride> rides=rideRepo.findCompletedRidesAfter(driver.getId(), startDate,Status.COMPLETED);
 
@@ -133,6 +138,38 @@ public class DriverServiceImpl implements DriverService {
               rides.size(),
               rideSummaries
       );
+    }
+
+    @Override
+    public String giveRatingForRider(Long rideId,RatingDTO ratingDTO) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Driver driver=driverRepo.findByEmail(email).orElseThrow(() -> new DriverNotFoundException("Driver not found"));
+        Ride ride=rideRepo.findById(rideId).orElseThrow(() -> new RideUnavailableException("Ride not found"));
+        Integer driverRating=ratingDTO.getRating();
+        String driverComment=ratingDTO.getComment();
+        if(ride.getStatus() != Status.COMPLETED) {
+            throw new RideUnavailableException("Ride not completed");
+        }
+        if(!ride.getDriver().getEmail().equals(driver.getEmail())) {
+            throw new DriverNotFoundException("Driver you can rate only your ride");
+        }
+        if (driverRating < 1 || driverRating > 5) {
+            throw new DriverNotFoundException("Rating must be between 1 and 5");
+        }
+
+        RideRating rideRating = ride.getRideRating() != null
+                ? ride.getRideRating()
+                : new RideRating();
+        if(rideRating.getDriverRating()!=null)
+            throw new RatingAlreadyExistsException(" rating is already done");
+
+        rideRating.setRide(ride);
+        rideRating.setDriver(ride.getDriver());
+        rideRating.setDriverRating(driverRating);
+        rideRating.setDriverComment(driverComment);
+        rideRatingRepo.save(rideRating);
+
+        return "THANK YOU FOR YOUR VALUABLE FEEDBACK";
     }
 
 }

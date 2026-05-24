@@ -2,13 +2,11 @@ package com.uber.entity;
 
 import com.uber.Roles;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+
 
 import java.time.LocalDateTime;
 import java.util.List;

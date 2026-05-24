@@ -31,10 +31,8 @@ public class RideRating {
     @JoinColumn(name="driver_id")
     Driver driver;
 
-    @Column(nullable = false)
     Integer driverRating;
 
-    @Column(nullable = false)
     Integer riderRating;
 
     String driverComment;

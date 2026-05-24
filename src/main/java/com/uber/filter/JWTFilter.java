@@ -39,6 +39,7 @@ public class JWTFilter extends OncePerRequestFilter {
                         List.of(new SimpleGrantedAuthority("ROLE_" + role));
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken
                         (email, null, authorities);
+
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }

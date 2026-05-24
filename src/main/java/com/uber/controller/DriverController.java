@@ -15,7 +15,7 @@ import java.util.List;
 public class DriverController {
     private final DriverService driverService;
 
-    @PreAuthorize("hasRole('DRIVER')")
+    @PreAuthorize("hasAnyRole('DRIVER')")
     @GetMapping("/pending/rides")
     public ResponseEntity<List<AllPendingRidesDTO>> getAllRides() {
         return ResponseEntity.ok(driverService.getAllPendingRides());
@@ -45,15 +45,21 @@ public class DriverController {
         return ResponseEntity.ok(driverService.endRide(rideId));
     }
 
-    @PreAuthorize("hasRole('DRIVER')")
+    @PreAuthorize("hasAnyRole('DRIVER')")
     @GetMapping("/ride/history")
     public ResponseEntity<List<AllRidesDTO>> getAllRidesHistory() {
         return ResponseEntity.ok(driverService.getAllRides());
     }
-    @PreAuthorize("hasRole('DRIVER')")
+    @PreAuthorize("hasAnyRole('DRIVER')")
     @GetMapping("/getEarnings/{days}")
     public ResponseEntity<EarningsDTO> getEarnings(@PathVariable Long days) {
         return ResponseEntity.ok(driverService.getEarnings(days));
+    }
+    @PreAuthorize("hasRole('DRIVER')")
+    @PostMapping("/rate/rider/{rideId}")
+    public ResponseEntity<String> giveRatingForRider(@PathVariable Long rideId,
+                                                     @RequestBody RatingDTO ratingDTO) {
+        return ResponseEntity.ok(driverService.giveRatingForRider(rideId,ratingDTO));
     }
 
 

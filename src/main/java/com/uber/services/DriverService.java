@@ -1,7 +1,6 @@
 package com.uber.services;
 
 import com.uber.DTO.*;
-import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -19,4 +18,6 @@ public interface DriverService {
      List<AllRidesDTO> getAllRides();
 
     EarningsDTO getEarnings(Long days);
+
+    String giveRatingForRider(Long rideId,RatingDTO ratingDTO);
 }

@@ -2,18 +2,14 @@ package com.uber.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-import static org.hibernate.internal.util.collections.ArrayHelper.forEach;
 
 @RestControllerAdvice
 public class GlobalHandler {
@@ -40,5 +36,53 @@ public class GlobalHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
 
     }
+    @ExceptionHandler(RatingAlreadyExistsException.class)
+    public ResponseEntity<ApiErrorResponse> handleRatingAlreadyExistsException(RatingAlreadyExistsException e){
+        ApiErrorResponse response = new ApiErrorResponse();
+        response.setMessage(e.getMessage());
+        response.setStatus(400);
+        response.setTimestamp(LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiErrorResponse> handleBadCredentialsException(BadCredentialsException ex) {
+        ApiErrorResponse response = new ApiErrorResponse();
+        response.setMessage(ex.getMessage());
+        response.setStatus(400);
+        response.setTimestamp(LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+    @ExceptionHandler(DriverUnavailableException.class)
+    public ResponseEntity<ApiErrorResponse> handleDriverUnavailable(DriverUnavailableException driverUnavailable) {
+        ApiErrorResponse response = new ApiErrorResponse();
+        response.setMessage(driverUnavailable.getMessage());
+        response.setStatus(400);
+        response.setTimestamp(LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+    }
+    @ExceptionHandler(RideUnavailableException.class)
+    public ResponseEntity<ApiErrorResponse> handleRideUnavailable(RideUnavailableException driverUnavailable) {
+        ApiErrorResponse response = new ApiErrorResponse();
+        response.setMessage(driverUnavailable.getMessage());
+        response.setStatus(400);
+        response.setTimestamp(LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+    }
+  @ExceptionHandler(DriverNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleDriverNotFound(DriverNotFoundException driverNotFound) {
+        ApiErrorResponse response = new ApiErrorResponse();
+        response.setMessage(driverNotFound.getMessage());
+        response.setStatus(400);
+        response.setTimestamp(LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+  }
+  @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleUserNotFoundException(UserNotFoundException userNotFoundException){
+        ApiErrorResponse response = new ApiErrorResponse();
+        response.setMessage(userNotFoundException.getMessage());
+        response.setStatus(400);
+        response.setTimestamp(LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 
+  }
 }

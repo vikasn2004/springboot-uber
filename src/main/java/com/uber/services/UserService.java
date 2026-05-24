@@ -1,10 +1,6 @@
 package com.uber.services;
 
-import com.uber.DTO.AllRidesDTO;
-import com.uber.DTO.RideFareDTO;
-import com.uber.DTO.RideRequestDTO;
-import com.uber.DTO.RideRequestResponseDTO;
-import org.jspecify.annotations.Nullable;
+import com.uber.DTO.*;
 
 import java.util.List;
 
@@ -16,4 +12,6 @@ public interface UserService {
      String cancelRide(Long rideId);
 
     List<AllRidesDTO> getallRides(Long userId);
+
+     String giveDriverRating(Long rideId, RatingDTO ratingDTO);
 }
