@@ -34,7 +34,7 @@ public class UserController {
     public ResponseEntity<String> cancelRideRequest(@PathVariable Long rideId) {
         return ResponseEntity.ok(userService.cancelRide(rideId));
     }
-    @PreAuthorize("hasAnyRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/ride/history/{userId}")
     public ResponseEntity<List<AllRidesDTO>> getAllRides(@PathVariable Long userId) {
         return  ResponseEntity.ok(userService.getallRides(userId));

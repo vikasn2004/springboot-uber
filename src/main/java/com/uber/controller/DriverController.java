@@ -45,12 +45,12 @@ public class DriverController {
         return ResponseEntity.ok(driverService.endRide(rideId));
     }
 
-    @PreAuthorize("hasAnyRole('DRIVER')")
+    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping("/ride/history")
     public ResponseEntity<List<AllRidesDTO>> getAllRidesHistory() {
         return ResponseEntity.ok(driverService.getAllRides());
     }
-    @PreAuthorize("hasAnyRole('DRIVER')")
+    @PreAuthorize("hasRole('DRIVER')")
     @GetMapping("/getEarnings/{days}")
     public ResponseEntity<EarningsDTO> getEarnings(@PathVariable Long days) {
         return ResponseEntity.ok(driverService.getEarnings(days));
