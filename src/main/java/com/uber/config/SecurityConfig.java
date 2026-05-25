@@ -30,26 +30,9 @@ private final UserDetailsService userDetailsService;
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                         // Public endpoints
                         .requestMatchers("/auth/uber/**").permitAll()
-
-                        // Admin endpoints
+                        .requestMatchers("/uber/user/**").hasRole("USER")
+                        .requestMatchers("/uber/driver/**").hasRole("DRIVER")
                         .requestMatchers("/uber/admin/**").hasRole("ADMIN")
-
-                        // User endpoints
-                        .requestMatchers("/uber/user/ride/fare").hasRole("USER")
-                        .requestMatchers("/uber/user/ride/request").hasRole("USER")
-                        .requestMatchers("/uber/user/ride/cancel/**").hasRole("USER")
-                        .requestMatchers("/uber/user/ride/history/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers("/uber/user/rate/driver/**").hasRole("USER")
-
-                        // Driver endpoints
-                        .requestMatchers("/uber/driver/pending/rides").hasAnyRole("DRIVER", "ADMIN")
-                        .requestMatchers("/uber/driver/ride/accept/**").hasRole("DRIVER")
-                        .requestMatchers("/uber/driver/ride/cancel/**").hasRole("DRIVER")
-                        .requestMatchers("/uber/driver/ride/started/**").hasRole("DRIVER")
-                        .requestMatchers("/uber/driver/ride/end/**").hasRole("DRIVER")
-                        .requestMatchers("/uber/driver/ride/history").hasAnyRole("DRIVER", "ADMIN")
-                        .requestMatchers("/uber/driver/getEarnings/**").hasAnyRole("DRIVER", "ADMIN")
-                        .requestMatchers("/uber/driver/rate/rider/**").hasRole("DRIVER")
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
