@@ -9,6 +9,10 @@ import com.uber.exceptions.DriverNotFoundException;
 import com.uber.exceptions.DriverUnavailableException;
 import com.uber.exceptions.RatingAlreadyExistsException;
 import com.uber.exceptions.RideUnavailableException;
+import com.uber.kafka.RideAcceptProducer;
+import com.uber.kafka.RideCancelledProducer;
+import com.uber.kafka.RideCompletedConsumer;
+import com.uber.kafka.RideCompletedProducer;
 import com.uber.repository.DriverRepo;
 import com.uber.repository.RideRatingRepo;
 import com.uber.repository.RideRepo;
@@ -29,6 +33,11 @@ public class DriverServiceImpl implements DriverService {
     private final ModelMapper modelMapper;
     private final DriverRepo driverRepo;
     private final RideRatingRepo rideRatingRepo;
+    private final RideAcceptProducer rideAcceptProducer;
+    private final RideCompletedProducer rideCompletedProducer;
+    private final RideAcceptProducer rideAcceptedProducer;
+    private final RideCancelledProducer rideCancelledProducer;
+
 
     @Override
     public List<AllPendingRidesDTO> getAllPendingRides() {
@@ -62,6 +71,7 @@ public class DriverServiceImpl implements DriverService {
         responseDTO.setDropOffLocation(ride.getDropOffLocation());
         responseDTO.setFare(ride.getFare());
         responseDTO.setStatus(ride.getStatus());
+        rideAcceptedProducer.rideAccept("RIDE ACCEPTED WITH rideId " + rideId);
         return responseDTO;
     }
     @Override
@@ -75,6 +85,7 @@ public class DriverServiceImpl implements DriverService {
         ride.setStatus(Status.REQUESTED);
         ride.setDriver(null);
         rideRepo.save(ride);
+        rideCancelledProducer.sendRideCancelled("THE RIDE WAS CANCELLED WITH rideId " + rideId);
         return "Ride cancelled,back in queue";
     }
 
@@ -117,7 +128,7 @@ public class DriverServiceImpl implements DriverService {
         ride.setStatus(Status.COMPLETED);
         ride.getDriver().setAvailable(true);
         Ride savedRide = rideRepo.save(ride);
-
+        rideCompletedProducer.sendRideCompleted("THE RIDE WAS COMPLETED WITH rideId " + rideId);
         return modelMapper.map(savedRide, EndRideDTO.class);
     }
 

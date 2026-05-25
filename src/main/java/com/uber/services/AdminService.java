@@ -4,7 +4,6 @@ import com.uber.DTO.EarningsDTO;
 import com.uber.DTO.GetAllDrivers;
 import com.uber.DTO.GetAllUsers;
 import com.uber.DTO.GetDriverDetails;
-import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 

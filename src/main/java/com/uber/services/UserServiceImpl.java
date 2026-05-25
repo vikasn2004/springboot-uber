@@ -8,6 +8,9 @@ import com.uber.entity.User;
 import com.uber.exceptions.RatingAlreadyExistsException;
 import com.uber.exceptions.RideUnavailableException;
 import com.uber.exceptions.UserNotFoundException;
+import com.uber.kafka.RideCancelledProducer;
+import com.uber.kafka.RideRequestConsumer;
+import com.uber.kafka.RideRequestProducer;
 import com.uber.repository.RideRatingRepo;
 import com.uber.repository.RideRepo;
 import com.uber.repository.UserRepo;
@@ -29,6 +32,9 @@ public class UserServiceImpl implements UserService {
     private final RideRepo rideRepo;
     private final UserRepo userRepo;
     private final RideRatingRepo rideRatingRepo;
+    private final RideRequestProducer rideRequestProducer;
+    private final RideCancelledProducer rideCancelledProducer;
+
 
     @Value("${earth.radius}")
     Double earthRadius;
@@ -56,6 +62,7 @@ public class UserServiceImpl implements UserService {
         Ride currRide = rideRepo.save(ride);
         RideRequestResponseDTO responseDTO = modelMapper.map(ride, RideRequestResponseDTO.class);
         responseDTO.setRideId(currRide.getId());
+        rideRequestProducer.sendRideRequest("RIDE REQUEST POSTED WITH "+currRide.getId());
         return responseDTO;
     }
 
@@ -87,6 +94,7 @@ public class UserServiceImpl implements UserService {
         Ride ride=rideRepo.findById(rideId).orElseThrow(()->new RideUnavailableException("ride not found"));
         ride.setStatus(Status.CANCELLED);
         rideRepo.save(ride);
+        rideCancelledProducer.sendRideCancelled("RIDE CANCELLED WITH rideId " + rideId);
         return "ride cancelled";
     }
 
