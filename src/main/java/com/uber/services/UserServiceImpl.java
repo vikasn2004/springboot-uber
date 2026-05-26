@@ -9,7 +9,6 @@ import com.uber.exceptions.RatingAlreadyExistsException;
 import com.uber.exceptions.RideUnavailableException;
 import com.uber.exceptions.UserNotFoundException;
 import com.uber.kafka.RideCancelledProducer;
-import com.uber.kafka.RideRequestConsumer;
 import com.uber.kafka.RideRequestProducer;
 import com.uber.repository.RideRatingRepo;
 import com.uber.repository.RideRepo;

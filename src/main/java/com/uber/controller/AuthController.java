@@ -4,7 +4,6 @@ import com.uber.DTO.DriverRegisterDTO;
 import com.uber.DTO.LoginDTO;
 import com.uber.DTO.UserRegisterDTO;
 import com.uber.services.AuthService;
-import com.uber.services.JWTUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
