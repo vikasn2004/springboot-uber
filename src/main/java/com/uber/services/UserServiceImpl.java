@@ -5,6 +5,7 @@ import com.uber.Status;
 import com.uber.entity.Ride;
 import com.uber.entity.RideRating;
 import com.uber.entity.User;
+import com.uber.exceptions.InvalidRateException;
 import com.uber.exceptions.RatingAlreadyExistsException;
 import com.uber.exceptions.RideUnavailableException;
 import com.uber.exceptions.UserNotFoundException;
@@ -123,7 +124,7 @@ public class UserServiceImpl implements UserService {
         }
 
         if(riderRating<1 || riderRating>5) {
-            throw new UserNotFoundException("Invalid user rating must be between 1 and 5");
+            throw new InvalidRateException("Invalid user rating must be between 1 and 5");
         }
         RideRating rideRating = ride.getRideRating() != null
                 ? ride.getRideRating()

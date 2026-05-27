@@ -84,5 +84,13 @@ public class GlobalHandler {
         response.setTimestamp(LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 
-  }
+    }
+    @ExceptionHandler(InvalidRateException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidRateException(InvalidRateException invalidRateException) {
+        ApiErrorResponse response = new ApiErrorResponse();
+        response.setMessage(invalidRateException.getMessage());
+        response.setStatus(400);
+        response.setTimestamp(LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
 }
