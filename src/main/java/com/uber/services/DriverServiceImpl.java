@@ -18,6 +18,7 @@ import com.uber.repository.RideRatingRepo;
 import com.uber.repository.RideRepo;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,7 +52,7 @@ public class DriverServiceImpl implements DriverService {
     @Transactional
     @Override
     public AcceptRideResponseDTO rideAccept(Long rideId) {
-        Ride ride = rideRepo.findById(rideId).orElseThrow(() -> new RuntimeException("Ride not found"));
+        Ride ride = rideRepo.findById(rideId).orElseThrow(() -> new RideUnavailableException("Ride not found"));
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Driver driver = driverRepo.findByEmail(email).orElseThrow(() -> new DriverNotFoundException("Driver not found"));
         if(!driver.isAvailable())
@@ -76,11 +77,15 @@ public class DriverServiceImpl implements DriverService {
     }
     @Override
     public String cancelRide(Long rideId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Ride ride = rideRepo.findById(rideId).orElseThrow(() -> new RideUnavailableException("Ride not found"));
         if(ride.getStatus() != Status.ACCEPTED) {
             throw new RideUnavailableException("Ride not accepted");
         }
-        Driver driver=ride.getDriver();
+        Driver driver=driverRepo.findByEmail(email).orElseThrow(() -> new DriverNotFoundException("Driver not found"));
+        if(!ride.getDriver().getEmail().equals(driver.getEmail())) {  // ADD THIS
+            throw new DriverUnavailableException("You can only cancel your own ride");
+        }
         driver.setAvailable(true);
         ride.setStatus(Status.REQUESTED);
         ride.setDriver(null);
@@ -103,9 +108,14 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public String startedRide(Long rideId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();  // ADD
         Ride ride = rideRepo.findById(rideId).orElseThrow(() -> new RideUnavailableException("Ride not found"));
-        if (ride.getStatus() != Status.ACCEPTED) {
+        if(ride.getStatus() != Status.ACCEPTED) {
             throw new RideUnavailableException("Ride not accepted");
+        }
+        Driver driver = driverRepo.findByEmail(email).orElseThrow(() -> new DriverNotFoundException("Driver not found"));  // ADD
+        if(!ride.getDriver().getEmail().equals(driver.getEmail())) {  // ADD
+            throw new DriverUnavailableException("You can only start your own ride");
         }
         ride.setStatus(Status.ONGOING);
         ride.setPickupTime(LocalDateTime.now());
@@ -115,15 +125,17 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public EndRideDTO endRide(Long rideId) {
-        Ride ride = rideRepo.findById(rideId)
-                .orElseThrow(() -> new RideUnavailableException("Ride not found"));
-
-        if (ride.getStatus() != Status.ONGOING) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();  // ADD
+        Ride ride = rideRepo.findById(rideId).orElseThrow(() -> new RideUnavailableException("Ride not found"));
+        if(ride.getStatus() != Status.ONGOING) {
             throw new RideUnavailableException("Ride is not ongoing");
         }
-
+        Driver driver = driverRepo.findByEmail(email).orElseThrow(() -> new DriverNotFoundException("Driver not found"));  // ADD
+        if(!ride.getDriver().getEmail().equals(driver.getEmail())) {  // ADD
+            throw new DriverUnavailableException("You can only end your own ride");
+        }
         ride.setDropOffTime(LocalDateTime.now());
-        Double durationMinutes =(double) Duration.between(ride.getPickupTime(), ride.getDropOffTime()).toMinutes();
+        Double durationMinutes = (double) Duration.between(ride.getPickupTime(), ride.getDropOffTime()).toMinutes();
         ride.setDuration(durationMinutes);
         ride.setStatus(Status.COMPLETED);
         ride.getDriver().setAvailable(true);
