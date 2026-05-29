@@ -3,10 +3,9 @@ package com.uber;
 import com.uber.DTO.*;
 import com.uber.entity.Driver;
 import com.uber.entity.Ride;
+import com.uber.entity.RideRating;
 import com.uber.entity.User;
-import com.uber.exceptions.DriverNotFoundException;
-import com.uber.exceptions.DriverUnavailableException;
-import com.uber.exceptions.RideUnavailableException;
+import com.uber.exceptions.*;
 import com.uber.kafka.RideAcceptProducer;
 import com.uber.kafka.RideCancelledProducer;
 import com.uber.kafka.RideCompletedProducer;
@@ -149,7 +148,7 @@ public class DriverServiceTests {
                 .isInstanceOf(RideUnavailableException.class).hasMessage("Ride not requested or Ride was cancelled");
     }
     @Test
-    public void accept_Ride_Cancelled(){
+    public void cancel_ride_successful() {
         getAuth(email);
         user = new User();
         user.setId(1L);
@@ -161,6 +160,40 @@ public class DriverServiceTests {
         String message=driverService.cancelRide(rideId);
         assertThat(message).isEqualTo( "Ride cancelled,back in queue");
         assertThat(ride.getStatus()).isEqualTo(Status.REQUESTED);
+    }
+    @Test
+    public void cancel_Ride_NotFound(){
+        getAuth(email);
+        when(rideRepo.findById(rideId)).thenReturn(Optional.empty());
+        assertThatThrownBy(()->driverService.cancelRide(rideId)).
+                isInstanceOf(RideUnavailableException.class).hasMessage("Ride not found");
+    }
+    @Test
+    public void cancel_ride_NotRequested(){
+        getAuth(email);
+        ride.setStatus(Status.CANCELLED);
+        when(rideRepo.findById(rideId)).thenReturn(Optional.of(ride));
+        assertThatThrownBy(()->driverService.cancelRide(rideId))
+                .isInstanceOf(RideUnavailableException.class).hasMessage("Ride not accepted");
+
+    }
+    @Test
+    public void cancel_ride_unauthorized_driver(){
+        ride.setDriver(driver);
+        String email="other@gmail.com";
+        Authentication authentication= Mockito.mock(Authentication.class);
+        when(authentication.getName()).thenReturn(email);
+        SecurityContext securityContext = Mockito.mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        ride.setStatus(Status.ACCEPTED);
+         Driver driverUnauthorized=new Driver();
+         driverUnauthorized.setEmail(email);
+         driverUnauthorized.setId(2L);
+        when(rideRepo.findById(rideId)).thenReturn(Optional.of(ride));
+        when(driverRepo.findByEmail(driverUnauthorized.getEmail())).thenReturn(Optional.of(driverUnauthorized));
+        assertThatThrownBy(()->driverService.cancelRide(rideId))
+                .isInstanceOf(DriverUnavailableException.class).hasMessage("You can only cancel your own ride");
     }
     @Test
     public void getAllRide_history(){
@@ -184,6 +217,21 @@ public class DriverServiceTests {
       assertThat(ride.getStatus()).isEqualTo(Status.ONGOING);
     }
     @Test
+    public void ride_start_not_accepted(){
+        getAuth(email);
+        ride.setStatus(Status.REQUESTED);
+        when(rideRepo.findById(rideId)).thenReturn(Optional.of(ride));
+        assertThatThrownBy(()->driverService.startedRide(rideId))
+                .isInstanceOf(RideUnavailableException.class).hasMessage("Ride not accepted");
+    }
+    @Test
+    public void ride_start_NotFound(){
+        getAuth(email);
+        when(rideRepo.findById(rideId)).thenReturn(Optional.empty());
+        assertThatThrownBy(()->driverService.startedRide(rideId))
+                .isInstanceOf(RideUnavailableException.class).hasMessage("Ride not found");
+    }
+    @Test
     public void ride_ended(){
         EndRideDTO endRideDTO = new EndRideDTO();
         getAuth(email);
@@ -198,6 +246,15 @@ public class DriverServiceTests {
         assertThat(result).isNotNull();
         assertThat(ride.getStatus()).isEqualTo(Status.COMPLETED);
     }
+    @Test
+    public void ride_ended_not_ongoing(){
+        getAuth(email);
+        ride.setStatus(Status.ACCEPTED);
+        when(rideRepo.findById(rideId)).thenReturn(Optional.of(ride));
+        assertThatThrownBy(()->driverService.endRide(rideId))
+                .isInstanceOf(RideUnavailableException.class).hasMessage("Ride is not ongoing");
+    }
+
     @Test
     public void get_Earnings(){
         ride.setFare(100.0);
@@ -215,6 +272,13 @@ public class DriverServiceTests {
         assertThat(result.getPeriodDays()).isEqualTo(7);
     }
     @Test
+    public void get_earning_driverNotFound(){
+        getAuth(email);
+        when(driverRepo.findByEmail(email)).thenReturn(Optional.empty());
+        assertThatThrownBy(()->driverService.getEarnings(7L))
+                .isInstanceOf(DriverNotFoundException.class).hasMessage("Driver not found");
+    }
+    @Test
     public void get_Earnings_NoRides(){
         getAuth(email);
         when(driverRepo.findByEmail(email)).thenReturn(Optional.of(driver));
@@ -226,4 +290,88 @@ public class DriverServiceTests {
         assertThat(result.getTotalRides()).isEqualTo(0);
     }
 
+   @Test
+    public void rating_successful(){
+        getAuth(email);
+        ride.setStatus(Status.COMPLETED);
+        ride.setDriver(driver);
+
+        RatingDTO ratingDTO = new RatingDTO();
+        ratingDTO.setRating(4);
+        ratingDTO.setComment("very good customer");
+
+        when(driverRepo.findByEmail(email)).thenReturn(Optional.of(driver));
+        when(rideRepo.findById(rideId)).thenReturn(Optional.of(ride));
+       when(rideRatingRepo.save(any(RideRating.class))).thenReturn(new RideRating());
+       String message=driverService.giveRatingForRider(rideId,ratingDTO);
+       assertThat(message).isEqualTo("THANK YOU FOR YOUR VALUABLE FEEDBACK");
+    }
+    @Test
+    public void rating_falied_rideNotCompleted(){
+        getAuth(email);
+        ride.setStatus(Status.ONGOING);
+        when(driverRepo.findByEmail(email)).thenReturn(Optional.of(driver));
+        when(rideRepo.findById(rideId)).thenReturn(Optional.of(ride));
+        assertThatThrownBy(()->driverService.giveRatingForRider(rideId,new RatingDTO()))
+                .isInstanceOf(RideUnavailableException.class).hasMessage("Ride not completed");
+    }
+    @Test
+    public void rating_failed_unauthorized(){
+        ride.setStatus(Status.COMPLETED);
+        ride.setDriver(driver);
+
+        Driver otherDriver = new Driver();
+        otherDriver.setEmail("other@gmail.com");
+
+        getAuth("other@gmail.com");
+        when(driverRepo.findByEmail("other@gmail.com")).thenReturn(Optional.of(otherDriver));
+        when(rideRepo.findById(rideId)).thenReturn(Optional.of(ride));
+
+        RatingDTO ratingDTO = new RatingDTO();
+        ratingDTO.setRating(4);
+        ratingDTO.setComment("good");
+
+        assertThatThrownBy(() -> driverService.giveRatingForRider(rideId, ratingDTO))
+                .isInstanceOf(DriverNotFoundException.class)
+                .hasMessage("Driver you can rate only your ride");
+    }
+    @Test
+    public void rating_invalid_rating_value() {
+        ride.setStatus(Status.COMPLETED);
+        ride.setDriver(driver);
+
+        RatingDTO ratingDTO = new RatingDTO();
+        ratingDTO.setRating(6);
+        ratingDTO.setComment("good");
+
+        getAuth(email);
+        when(driverRepo.findByEmail(email)).thenReturn(Optional.of(driver));
+        when(rideRepo.findById(rideId)).thenReturn(Optional.of(ride));
+
+        assertThatThrownBy(() -> driverService.giveRatingForRider(rideId, ratingDTO))
+                .isInstanceOf(InvalidRateException.class)
+                .hasMessage("Rating must be between 1 and 5");
+    }
+    @Test
+    public void rating_already_exists() {
+        ride.setStatus(Status.COMPLETED);
+        ride.setDriver(driver);
+
+        RideRating existingRating = new RideRating();
+        existingRating.setDriverRating(5);
+        existingRating.setDriverComment("very good");
+        ride.setRideRating(existingRating);
+
+        RatingDTO ratingDTO = new RatingDTO();
+        ratingDTO.setRating(1);
+        ratingDTO.setComment("very bad");
+
+        getAuth(email);
+        when(driverRepo.findByEmail(email)).thenReturn(Optional.of(driver));
+        when(rideRepo.findById(rideId)).thenReturn(Optional.of(ride));
+
+        assertThatThrownBy(() -> driverService.giveRatingForRider(rideId, ratingDTO))
+                .isInstanceOf(RatingAlreadyExistsException.class).hasMessage("rating is already done");
+
+    }
 }

@@ -5,10 +5,7 @@ import com.uber.Status;
 import com.uber.entity.Ride;
 import com.uber.entity.RideRating;
 import com.uber.entity.User;
-import com.uber.exceptions.InvalidRateException;
-import com.uber.exceptions.RatingAlreadyExistsException;
-import com.uber.exceptions.RideUnavailableException;
-import com.uber.exceptions.UserNotFoundException;
+import com.uber.exceptions.*;
 import com.uber.kafka.RideCancelledProducer;
 import com.uber.kafka.RideRequestProducer;
 import com.uber.repository.RideRatingRepo;
@@ -91,7 +88,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String cancelRide(Long rideId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Ride ride=rideRepo.findById(rideId).orElseThrow(()->new RideUnavailableException("ride not found"));
+        if(!ride.getRider().getEmail().equals(email)) {
+            throw new BadCredentialsException("Unauthorized user");
+        }
         ride.setStatus(Status.CANCELLED);
         rideRepo.save(ride);
         rideCancelledProducer.sendRideCancelled("RIDE CANCELLED WITH rideId " + rideId);
@@ -101,6 +102,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<AllRidesDTO> getallRides(Long userId) {
         User user=userRepo.findById(userId).orElseThrow(()->new UserNotFoundException("user not found"));
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        if(!user.getEmail().equals(email)) {
+           throw new BadCredentialsException("Unauthorized user");
+        }
         List<AllRidesDTO> allRidesDTOS = rideRepo.findByRider(user)
                 .stream()
                 .map(ride -> modelMapper.map(ride, AllRidesDTO.class))

@@ -5,20 +5,15 @@ import com.uber.Status;
 import com.uber.entity.Driver;
 import com.uber.entity.Ride;
 import com.uber.entity.RideRating;
-import com.uber.exceptions.DriverNotFoundException;
-import com.uber.exceptions.DriverUnavailableException;
-import com.uber.exceptions.RatingAlreadyExistsException;
-import com.uber.exceptions.RideUnavailableException;
+import com.uber.exceptions.*;
 import com.uber.kafka.RideAcceptProducer;
 import com.uber.kafka.RideCancelledProducer;
-import com.uber.kafka.RideCompletedConsumer;
 import com.uber.kafka.RideCompletedProducer;
 import com.uber.repository.DriverRepo;
 import com.uber.repository.RideRatingRepo;
 import com.uber.repository.RideRepo;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -108,13 +103,13 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public String startedRide(Long rideId) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();  // ADD
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Ride ride = rideRepo.findById(rideId).orElseThrow(() -> new RideUnavailableException("Ride not found"));
         if(ride.getStatus() != Status.ACCEPTED) {
             throw new RideUnavailableException("Ride not accepted");
         }
         Driver driver = driverRepo.findByEmail(email).orElseThrow(() -> new DriverNotFoundException("Driver not found"));  // ADD
-        if(!ride.getDriver().getEmail().equals(driver.getEmail())) {  // ADD
+        if(!ride.getDriver().getEmail().equals(driver.getEmail())) {
             throw new DriverUnavailableException("You can only start your own ride");
         }
         ride.setStatus(Status.ONGOING);
@@ -125,13 +120,13 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public EndRideDTO endRide(Long rideId) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();  // ADD
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Ride ride = rideRepo.findById(rideId).orElseThrow(() -> new RideUnavailableException("Ride not found"));
         if(ride.getStatus() != Status.ONGOING) {
             throw new RideUnavailableException("Ride is not ongoing");
         }
         Driver driver = driverRepo.findByEmail(email).orElseThrow(() -> new DriverNotFoundException("Driver not found"));  // ADD
-        if(!ride.getDriver().getEmail().equals(driver.getEmail())) {  // ADD
+        if(!ride.getDriver().getEmail().equals(driver.getEmail())) {
             throw new DriverUnavailableException("You can only end your own ride");
         }
         ride.setDropOffTime(LocalDateTime.now());
@@ -177,14 +172,14 @@ public class DriverServiceImpl implements DriverService {
             throw new DriverNotFoundException("Driver you can rate only your ride");
         }
         if (driverRating < 1 || driverRating > 5) {
-            throw new DriverNotFoundException("Rating must be between 1 and 5");
+            throw new InvalidRateException("Rating must be between 1 and 5");
         }
 
         RideRating rideRating = ride.getRideRating() != null
                 ? ride.getRideRating()
                 : new RideRating();
         if(rideRating.getDriverRating()!=null)
-            throw new RatingAlreadyExistsException(" rating is already done");
+            throw new RatingAlreadyExistsException("rating is already done");
 
         rideRating.setRide(ride);
         rideRating.setDriver(ride.getDriver());
