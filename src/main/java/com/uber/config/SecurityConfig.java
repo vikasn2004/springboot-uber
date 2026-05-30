@@ -29,7 +29,7 @@ private final UserDetailsService userDetailsService;
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                         // Public endpoints
-                        .requestMatchers("/swagger-ui/**" , "/v3/api-docs/**","/swagger-ui.html").permitAll()
+                        .requestMatchers("/swagger-ui/**" , "/v3/api-docs/**","/swagger-ui.html","/support/**","/support.html").permitAll()
                         .requestMatchers("/auth/uber/**").permitAll()
                         //Role based endpoints
                         .requestMatchers("/uber/user/**").hasRole("USER")
